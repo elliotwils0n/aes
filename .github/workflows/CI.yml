@@ -1,0 +1,75 @@
+name: CI 
+
+on:
+  push:
+    branches: [master]
+  pull_request: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: short
+
+jobs:
+  # Check if code compiles.
+  check:
+    name: cargo check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: check
+        run: cargo check --all --tests --benches
+
+  # Check code style.
+  format:
+    name: cargo fmt
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+  # Check docs.
+  docs:
+    name: cargo docs
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: docs
+        run: cargo doc --no-deps --all-features
+
+  # Run test againts different systems.
+  test:
+    name: "cargo test (${{ matrix.toolchain }} on ${{ matrix.os }})"
+    needs: check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        toolchain: [stable, beta, nightly]
+        include:
+          - os: windows-latest
+            toolchain: stable
+          - os: macos-latest
+            toolchain: stable
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install Rust ${{ matrix.toolchain }}"
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: Run tests
+        run: cargo test
