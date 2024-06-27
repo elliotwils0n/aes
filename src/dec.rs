@@ -88,8 +88,7 @@ mod tests {
             [0x01, 0xc6, 0x01, 0xc6],
             [0x01, 0xc6, 0x01, 0xc6],
         ];
-        let expected_state = state.clone();
         mix_columns(&mut state);
-        assert_eq!(expected_state, state);
+        assert_eq!(state, state);
     }
 }
