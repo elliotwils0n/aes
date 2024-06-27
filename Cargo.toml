@@ -8,6 +8,6 @@ description = "Advanced Encryption Standard"
 readme = "README.md"
 repository = "https://github.com/elliotwils0n/aes"
 license = "MIT"
-keywords = ["encryption", "security"]
+keywords = ["cryptography", "encryption", "security"]
 
 [dependencies]
