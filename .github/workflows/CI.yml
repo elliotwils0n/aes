@@ -44,9 +44,6 @@ jobs:
     name: "cargo clippy (${{ matrix.toolchain }})"
     needs: check
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      checks: write
     strategy:
       matrix:
         toolchain: [stable, beta]
@@ -54,16 +51,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       #- run: rustup update stable && rustup default stable
-      - name: Install Rust ${{ matrix.toolchain }}
+      - name: "Install Rust ${{ matrix.toolchain }}"
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
       - name: cargo clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all --examples --tests --benches
+        run: cargo clippy --all --examples --tests --benches
 
   # Check docs.
   docs:
