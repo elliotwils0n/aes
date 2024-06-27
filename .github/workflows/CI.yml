@@ -23,7 +23,7 @@ jobs:
       #- run: rustup update stable && rustup default stable
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo check
-        run: cargo check --all --tests --benches
+        run: cargo check --all --examples --tests --benches
 
   # Check code style.
   fmt:
@@ -37,7 +37,30 @@ jobs:
         with:
           components: rustfmt
       - name: cargo fmt
-        run: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+  # Check warnings.
+  clippy:
+    name: cargo clippy
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, beta]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
+      - name: Install Rust ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+      - name: cargo clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all --examples --tests --benches
 
   # Check docs.
   docs:
