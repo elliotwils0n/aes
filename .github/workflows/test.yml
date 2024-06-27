@@ -1,0 +1,66 @@
+name: test
+
+on:
+  push:
+    branches: [master]
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: short
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Check if code compiles.
+  check:
+    name: cargo check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup update stable && rustup default stable
+      - name: cargo check
+        run: cargo check --all --tests --benches
+
+  # Check code style.
+  fmt:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup update stable && rustup default stable
+      - name: cargo fmt
+        run: cargo fmt --check
+
+  # Check docs.
+  docs:
+    name: cargo doc
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup update stable && rustup default stable
+      - name: cargo doc
+        run: cargo doc --no-deps --all-features
+
+  # Run test againts different systems.
+  test:
+    name: cargo test (${{ matrix.toolchain }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        toolchain: [stable, beta, nightly]
+        include:
+          - os: windows-latest
+            toolchain: stable
+          - os: macos-latest
+            toolchain: stable
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: cargo test
+        run: cargo test
