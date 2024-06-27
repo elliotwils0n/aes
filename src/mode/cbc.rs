@@ -19,7 +19,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> Ve
         let block: &Block = &plaintext[(i * BLOCK_SIZE)..((i + 1) * BLOCK_SIZE)]
             .try_into()
             .unwrap();
-        let encrypted_block = aes::encrypt_block(&xor_blocks(&block, &c), key);
+        let encrypted_block = aes::encrypt_block(&xor_blocks(block, &c), key);
         output.extend(encrypted_block);
         c = encrypted_block;
     }
@@ -46,8 +46,8 @@ pub(crate) fn decrypt(ciphertext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> V
         let block: &Block = &ciphertext[(i * BLOCK_SIZE)..((i + 1) * BLOCK_SIZE)]
             .try_into()
             .unwrap();
-        let decrypted_block = aes::decrypt_block(&block, key);
-        output.extend(xor_blocks(&decrypted_block, &prev_block));
+        let decrypted_block = aes::decrypt_block(block, key);
+        output.extend(xor_blocks(&decrypted_block, prev_block));
     }
     output
 }

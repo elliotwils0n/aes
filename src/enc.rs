@@ -14,7 +14,8 @@ pub(crate) fn sub_bytes(state: &mut State) {
 }
 
 pub(crate) fn shift_rows(state: &mut State) {
-    let state_clone = state.clone();
+    // todo: mem swap
+    let state_clone = state.to_vec();
     state[1][0] = state_clone[1][1];
     state[1][1] = state_clone[1][2];
     state[1][2] = state_clone[1][3];

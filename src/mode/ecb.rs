@@ -12,7 +12,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Vec<u8> {
         let block: &Block = &plaintext[(i * BLOCK_SIZE)..((i + 1) * BLOCK_SIZE)]
             .try_into()
             .unwrap();
-        let encrypted_block = aes::encrypt_block(&block, key);
+        let encrypted_block = aes::encrypt_block(block, key);
         output.extend(encrypted_block);
     }
     output
@@ -30,7 +30,7 @@ pub(crate) fn decrypt(ciphertext: &[u8], key: &[u8]) -> Vec<u8> {
         let block: &Block = &ciphertext[(i * BLOCK_SIZE)..((i + 1) * BLOCK_SIZE)]
             .try_into()
             .unwrap();
-        let decrypted_block = aes::decrypt_block(&block, key);
+        let decrypted_block = aes::decrypt_block(block, key);
         output.extend(decrypted_block);
     }
     output
