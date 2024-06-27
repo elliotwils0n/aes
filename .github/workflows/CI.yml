@@ -57,7 +57,7 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
       - name: cargo clippy
-        run: cargo clippy --all --examples --tests --benches
+        run: cargo clippy --all --examples --tests --benches -- -D warnings
 
   # Check docs.
   docs:
