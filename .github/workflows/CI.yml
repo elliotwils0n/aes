@@ -5,9 +5,6 @@ on:
     branches: [master]
   pull_request: {}
 
-permissions:
-  contents: read
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -23,11 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: check
+      - name: cargo check
         run: cargo check --all --tests --benches
 
   # Check code style.
-  format:
+  fmt:
     name: cargo fmt
     needs: check
     runs-on: ubuntu-latest
@@ -36,18 +33,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - name: fmt
-        run: cargo fmt --all -- --check
+      - name: cargo fmt
+        run: cargo fmt --check
 
   # Check docs.
   docs:
-    name: cargo docs
+    name: cargo doc
     needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: docs
+      - name: cargo doc
         run: cargo doc --no-deps --all-features
 
   # Run test againts different systems.
@@ -71,5 +68,5 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - name: Run tests
+      - name: cargo test
         run: cargo test
