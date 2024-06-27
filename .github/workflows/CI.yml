@@ -11,6 +11,7 @@ concurrency:
 
 env:
   RUST_BACKTRACE: short
+  CARGO_TERM_COLOR: always
 
 jobs:
   # Check if code compiles.
@@ -19,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo check
         run: cargo check --all --tests --benches
@@ -30,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -43,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo doc
         run: cargo doc --no-deps --all-features
@@ -64,6 +68,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+      #- run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: "Install Rust ${{ matrix.toolchain }}"
         uses: dtolnay/rust-toolchain@master
         with:
