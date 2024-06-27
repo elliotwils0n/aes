@@ -41,7 +41,7 @@ jobs:
 
   # Check warnings.
   clippy:
-    name: cargo clippy
+    name: "cargo clippy (${{ matrix.toolchain }})"
     needs: check
     runs-on: ubuntu-latest
     permissions:
