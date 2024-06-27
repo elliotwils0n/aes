@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      checks: write
+      #checks: write
     strategy:
       matrix:
         toolchain: [stable, beta]
