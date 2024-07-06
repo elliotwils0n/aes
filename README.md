@@ -31,11 +31,11 @@ Advanced Encryption Standard
 [deps-badge]: https://deps.rs/repo/github/elliotwils0n/aes/status.svg
 [deps-url]: https://deps.rs/repo/github/elliotwils0n/aes
 
-# Disclaimer
+## Disclaimer
 > [!WARNING]
 > Implementation of AES. It's done for my own research and should never be used outside of local playground.
 
-# Usage
+## Usage
 - Add Cargo.toml dependency
     ```toml
     [dependencies]
