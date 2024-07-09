@@ -25,7 +25,7 @@ jobs:
       - name: cargo check
         run: cargo check --all --examples --tests --benches
 
-  # Check code style.
+  # Check formatting.
   fmt:
     name: cargo fmt
     needs: check
@@ -88,8 +88,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      #- run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: "Install Rust ${{ matrix.toolchain }}"
+        #run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
