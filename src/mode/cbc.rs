@@ -2,7 +2,11 @@ use std::iter::zip;
 
 use crate::{aes, Block, BLOCK_SIZE};
 
-pub(crate) fn encrypt(plaintext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> Vec<u8> {
+pub(crate) fn encrypt(
+    plaintext: &[u8],
+    key: &[u8],
+    iv: &[u8; BLOCK_SIZE],
+) -> (Vec<u8>, [u8; BLOCK_SIZE]) {
     assert_eq!(
         0,
         plaintext.len() % BLOCK_SIZE,
@@ -23,10 +27,14 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> Ve
         output.extend(encrypted_block);
         c = encrypted_block;
     }
-    output
+    (output, c)
 }
 
-pub(crate) fn decrypt(ciphertext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> Vec<u8> {
+pub(crate) fn decrypt(
+    ciphertext: &[u8],
+    key: &[u8],
+    iv: &[u8; BLOCK_SIZE],
+) -> (Vec<u8>, [u8; BLOCK_SIZE]) {
     assert_eq!(
         0,
         ciphertext.len() % BLOCK_SIZE,
@@ -39,6 +47,7 @@ pub(crate) fn decrypt(ciphertext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> V
     let decrypted_first_block = aes::decrypt_block(first_block, key);
     output.extend(xor_blocks(&decrypted_first_block, iv));
 
+    let mut c: Block = *iv;
     for i in 1..(ciphertext.len() / BLOCK_SIZE) {
         let prev_block: &Block = &ciphertext[((i - 1) * BLOCK_SIZE)..(i * BLOCK_SIZE)]
             .try_into()
@@ -48,8 +57,9 @@ pub(crate) fn decrypt(ciphertext: &[u8], key: &[u8], iv: &[u8; BLOCK_SIZE]) -> V
             .unwrap();
         let decrypted_block = aes::decrypt_block(block, key);
         output.extend(xor_blocks(&decrypted_block, prev_block));
+        c = *prev_block;
     }
-    output
+    (output, c)
 }
 
 fn xor_blocks(a: &Block, b: &Block) -> Block {
@@ -86,7 +96,10 @@ mod tests {
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         ];
 
-        assert_eq!(ciphertext, encrypt(plaintext, key, iv));
-        assert_eq!(plaintext, decrypt(ciphertext, key, iv));
+        let (encrypted, _new_iv) = encrypt(plaintext, key, iv);
+        let (decrypted, _new_iv) = decrypt(ciphertext, key, iv);
+
+        assert_eq!(ciphertext, encrypted);
+        assert_eq!(plaintext, decrypted);
     }
 }

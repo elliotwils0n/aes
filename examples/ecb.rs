@@ -30,7 +30,7 @@ fn main() {
         let c = cipher.encryptor().update(p.as_bytes());
         ciphertext.extend(c);
     }
-    let c = match cipher.decryptor().finalize() {
+    let c = match cipher.encryptor().finalize() {
         Ok(f) => f,
         Err(err) => panic!("{:?}", err),
     };

@@ -20,9 +20,9 @@ pub(crate) type Word = [u8; 4];
 /// ECB dosen't need additional parameters but it is considered unsecured.
 /// CBC requires initialization vector.
 #[derive(Clone)]
-pub enum Mode<'a> {
+pub enum Mode {
     Ecb,
-    Cbc(&'a [u8; BLOCK_SIZE]),
+    Cbc([u8; BLOCK_SIZE]),
 }
 
 /// Padding options to extend input to the block size.
@@ -41,7 +41,7 @@ pub struct Cipher<'a> {
 }
 
 impl<'a> Cipher<'a> {
-    pub fn init(key: &'a [u8], mode: Mode<'a>, padding: Padding) -> Result<Self, CipherError> {
+    pub fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError> {
         let encryptor = Encryptor::init(key, mode.clone(), padding.clone())?;
         let decryptor = Decryptor::init(key, mode, padding)?;
         Ok(Self {
@@ -60,7 +60,7 @@ impl<'a> Cipher<'a> {
 }
 
 pub trait Operations<'a> {
-    fn init(key: &'a [u8], mode: Mode<'a>, padding: Padding) -> Result<Self, CipherError>
+    fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError>
     where
         Self: Sized;
     fn update(&mut self, data: &[u8]) -> Vec<u8>;
@@ -69,13 +69,13 @@ pub trait Operations<'a> {
 
 pub struct Encryptor<'a> {
     key: &'a [u8],
-    mode: Mode<'a>,
+    mode: Mode,
     padding: Padding,
     buffer: Vec<u8>,
 }
 
 impl<'a> Operations<'a> for Encryptor<'a> {
-    fn init(key: &'a [u8], mode: Mode<'a>, padding: Padding) -> Result<Self, CipherError> {
+    fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError> {
         if ![16, 24, 32].contains(&key.len()) {
             return Err(CipherError(format!(
                 "Ivalid key length for AES algorithm. Expected one of [128, 192, 256], got: {}",
@@ -102,7 +102,11 @@ impl<'a> Operations<'a> for Encryptor<'a> {
         // Encrypt data from the buffer, append it to output and clear the buffer.
         let ciphertext = match self.mode {
             Mode::Ecb => mode::ecb::encrypt(&self.buffer, self.key),
-            Mode::Cbc(iv) => mode::cbc::encrypt(&self.buffer, self.key, iv),
+            Mode::Cbc(iv) => {
+                let (output, new_iv) = mode::cbc::encrypt(&self.buffer, self.key, &iv);
+                self.mode = Mode::Cbc(new_iv);
+                output
+            }
         };
         output.extend(ciphertext);
         self.buffer.clear();
@@ -115,7 +119,11 @@ impl<'a> Operations<'a> for Encryptor<'a> {
         // Encrypt rest of the data and append to the output.
         let ciphertext = match self.mode {
             Mode::Ecb => mode::ecb::encrypt(fixed_remaining, self.key),
-            Mode::Cbc(iv) => mode::cbc::encrypt(fixed_remaining, self.key, iv),
+            Mode::Cbc(iv) => {
+                let (output, new_iv) = mode::cbc::encrypt(fixed_remaining, self.key, &iv);
+                self.mode = Mode::Cbc(new_iv);
+                output
+            }
         };
         output.extend(ciphertext);
 
@@ -134,7 +142,10 @@ impl<'a> Operations<'a> for Encryptor<'a> {
 
         let ciphertext = match self.mode {
             Mode::Ecb => mode::ecb::encrypt(&plaintext, self.key),
-            Mode::Cbc(iv) => mode::cbc::encrypt(&plaintext, self.key, iv),
+            Mode::Cbc(iv) => {
+                let (output, _new_iv) = mode::cbc::encrypt(&plaintext, self.key, &iv);
+                output
+            }
         };
 
         Ok(ciphertext)
@@ -143,13 +154,13 @@ impl<'a> Operations<'a> for Encryptor<'a> {
 
 pub struct Decryptor<'a> {
     key: &'a [u8],
-    mode: Mode<'a>,
+    mode: Mode,
     padding: Padding,
     buffer: Vec<u8>,
 }
 
 impl<'a> Operations<'a> for Decryptor<'a> {
-    fn init(key: &'a [u8], mode: Mode<'a>, padding: Padding) -> Result<Self, CipherError> {
+    fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError> {
         if ![16, 24, 32].contains(&key.len()) {
             return Err(CipherError(format!(
                 "Ivalid key length for AES algorithm. Expected one of [128, 192, 256], got: {}",
@@ -181,7 +192,11 @@ impl<'a> Operations<'a> for Decryptor<'a> {
 
         let ciphertext = match self.mode {
             Mode::Ecb => mode::ecb::decrypt(prior, self.key),
-            Mode::Cbc(iv) => mode::cbc::decrypt(prior, self.key, iv),
+            Mode::Cbc(iv) => {
+                let (output, new_iv) = mode::cbc::decrypt(prior, self.key, &iv);
+                self.mode = Mode::Cbc(new_iv);
+                output
+            }
         };
         self.buffer.extend(last_block);
         output.extend(ciphertext);
@@ -196,7 +211,10 @@ impl<'a> Operations<'a> for Decryptor<'a> {
 
         let plaintext = match self.mode {
             Mode::Ecb => mode::ecb::decrypt(&self.buffer, self.key),
-            Mode::Cbc(iv) => mode::cbc::decrypt(&self.buffer, self.key, iv),
+            Mode::Cbc(iv) => {
+                let (output, _new_iv) = mode::cbc::decrypt(&self.buffer, self.key, &iv);
+                output
+            }
         };
 
         let unpadded_plaintext = match padder.unpad(&plaintext) {

@@ -35,6 +35,10 @@ impl Padder for PKCS7 {
             )));
         }
         let pad_len = input[input.len() - 1];
+        assert!(
+            pad_len <= 16,
+            "Padding should be at most the size of the block"
+        );
         let pad_start = input.len() - pad_len as usize;
         if input[pad_start..].iter().all(|x| *x == pad_len) {
             Ok(&input[..pad_start])
