@@ -1,11 +1,11 @@
 use super::{Padder, PaddingError};
 
-pub struct PKCS7 {
+pub(crate) struct PKCS7 {
     size: usize,
 }
 
 impl PKCS7 {
-    fn new(size: usize) -> Self {
+    pub(crate) fn new(size: usize) -> Self {
         Self { size }
     }
 }
