@@ -44,4 +44,4 @@ cargo run --example ecb
 Example: [cbc.rs](examples/cbc.rs)
 ```shell
 cargo run --example cbc
-    ```
+```
