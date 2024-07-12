@@ -4,6 +4,6 @@ mod pkcs7;
 pub struct PaddingError(String);
 
 pub trait Padder {
-    fn pad(input: &[u8], size: usize) -> Result<Vec<u8>, PaddingError>;
-    fn unpad(input: &[u8], size: usize) -> Result<&[u8], PaddingError>;
+    fn pad(&self, input: &[u8]) -> Result<Vec<u8>, PaddingError>;
+    fn unpad<'a>(&self, input: &'a [u8]) -> Result<&'a [u8], PaddingError>;
 }

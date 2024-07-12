@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 mod aes;
 mod dec;
 mod enc;
