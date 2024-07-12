@@ -57,7 +57,7 @@ pub(crate) fn decrypt(
             .unwrap();
         let decrypted_block = aes::decrypt_block(block, key);
         output.extend(xor_blocks(&decrypted_block, prev_block));
-        c = *prev_block;
+        c = *block;
     }
     (output, c)
 }
