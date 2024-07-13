@@ -1,14 +1,15 @@
 use crate::{
     lookup::{RCON_LOOKUP, S_BOX},
-    State, Word, NB,
+    Block, Word, NB,
 };
 
-pub(crate) fn add_round_key(state: &mut State, key_schedule: &[Word], nr: u8) {
-    for c in 0..state[0].len() {
-        state[0][c] ^= key_schedule[nr as usize * NB + c][0];
-        state[1][c] ^= key_schedule[nr as usize * NB + c][1];
-        state[2][c] ^= key_schedule[nr as usize * NB + c][2];
-        state[3][c] ^= key_schedule[nr as usize * NB + c][3];
+#[allow(clippy::identity_op, clippy::erasing_op)] // for readability
+pub(crate) fn add_round_key(state: &mut Block, key_schedule: &[Word], nr: u8) {
+    for c in 0..NB {
+        state[0 * 4 + c] ^= key_schedule[nr as usize * NB + c][0];
+        state[1 * 4 + c] ^= key_schedule[nr as usize * NB + c][1];
+        state[2 * 4 + c] ^= key_schedule[nr as usize * NB + c][2];
+        state[3 * 4 + c] ^= key_schedule[nr as usize * NB + c][3];
     }
 }
 

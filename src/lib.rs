@@ -12,9 +12,8 @@ use padding::{Padder, PKCS7};
 pub(crate) const NB: usize = 4;
 pub(crate) const BLOCK_SIZE: usize = 16;
 
-pub(crate) type State = [[u8; NB]; 4];
 pub(crate) type Block = [u8; BLOCK_SIZE];
-pub(crate) type Word = [u8; 4];
+pub(crate) type Word = [u8; NB];
 
 /// Different modes to use with aes block cipher encryption.
 /// ECB dosen't need additional parameters but it is considered unsecured.
