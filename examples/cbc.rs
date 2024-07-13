@@ -1,14 +1,8 @@
 use aes::Operations;
 
 fn main() {
-    let key = &[
-        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65,
-        0x66,
-    ];
-    let iv = [
-        0x66, 0x65, 0x64, 63, 0x62, 0x61, 0x39, 0x38, 0x37, 0x36, 0x35, 0x34, 0x33, 0x32, 0x31,
-        0x30,
-    ];
+    let key = "0123456789abcdef".as_bytes();
+    let iv: [u8; 16] = "fedcba9876543210".as_bytes().try_into().unwrap();
     let plaintext = [
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
         "Tincidunt tortor aliquam nulla facilisi cras.",

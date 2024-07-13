@@ -22,7 +22,7 @@ pub(crate) type Word = [u8; 4];
 #[derive(Clone)]
 pub enum Mode {
     Ecb,
-    Cbc([u8; BLOCK_SIZE]),
+    Cbc(Block),
 }
 
 /// Padding options to extend input to the block size.

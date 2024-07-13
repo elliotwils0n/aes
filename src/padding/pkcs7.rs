@@ -14,7 +14,7 @@ impl Padder for PKCS7 {
     fn pad(&self, input: &[u8]) -> Result<Vec<u8>, PaddingError> {
         if input.len() > self.size {
             return Err(PaddingError(format!(
-                "Input size ({}) exceeds expected block size ({}).",
+                "Input size ({}) exceeds expected padder size ({}).",
                 input.len(),
                 self.size
             )));
@@ -29,16 +29,12 @@ impl Padder for PKCS7 {
     fn unpad<'a>(&self, input: &'a [u8]) -> Result<&'a [u8], PaddingError> {
         if input.len() != self.size {
             return Err(PaddingError(format!(
-                "Input size ({}) is not equal to block size ({}).",
+                "Input size ({}) is not equal to padder size ({}).",
                 input.len(),
                 self.size
             )));
         }
         let pad_len = input[input.len() - 1];
-        assert!(
-            pad_len <= 16,
-            "Padding should be at most the size of the block"
-        );
         let pad_start = input.len() - pad_len as usize;
         if input[pad_start..].iter().all(|x| *x == pad_len) {
             Ok(&input[..pad_start])
@@ -53,11 +49,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_err_pad_when_input_bigger_than_block_size() {
+    fn should_err_pad_when_input_to_big() {
         let padder = PKCS7::new(16);
         let input = [0u8; 17];
         let expected_result = Err(PaddingError(String::from(
-            "Input size (17) exceeds expected block size (16).",
+            "Input size (17) exceeds expected padder size (16).",
         )));
         let result = padder.pad(&input);
         assert_eq!(expected_result, result);
@@ -91,11 +87,11 @@ mod tests {
     }
 
     #[test]
-    fn should_err_unpad_when_input_not_equal_to_block_size() {
+    fn should_err_unpad_when_input_len_does_not_match() {
         let padder = PKCS7::new(16);
         let input = [0u8; 17];
         let expected_result = Err(PaddingError(String::from(
-            "Input size (17) is not equal to block size (16).",
+            "Input size (17) is not equal to padder size (16).",
         )));
         let result = padder.unpad(&input);
         assert_eq!(expected_result, result);
