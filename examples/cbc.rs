@@ -18,11 +18,12 @@ fn main() {
         "Eros in cursus turpis massa tincidunt dui.",
         "Aliquam purus sit amet luctus venenatis."];
 
-    // Encrypt data
     let mut cipher = match aes::Cipher::init(key, aes::Mode::Cbc(iv), aes::Padding::PKCS7) {
         Ok(c) => c,
         Err(err) => panic!("{:?}", err),
     };
+
+    // Encrypt data
     let mut ciphertext = Vec::<u8>::new();
     for p in plaintext {
         let c = cipher.encryptor().update(p.as_bytes());
@@ -35,10 +36,6 @@ fn main() {
     ciphertext.extend(c);
 
     // Decrypt data
-    let mut cipher = match aes::Cipher::init(key, aes::Mode::Cbc(iv), aes::Padding::PKCS7) {
-        Ok(c) => c,
-        Err(err) => panic!("{:?}", err),
-    };
     let mut recovered = Vec::<u8>::with_capacity(ciphertext.len());
     let c = cipher.decryptor().update(&ciphertext);
     recovered.extend(c);
