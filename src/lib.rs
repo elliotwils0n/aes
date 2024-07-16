@@ -15,17 +15,20 @@ pub(crate) const BLOCK_SIZE: usize = 16;
 pub(crate) type Block = [u8; BLOCK_SIZE];
 pub(crate) type Word = [u8; NB];
 
+pub enum Operation {
+    Encrypt,
+    Decrypt,
+}
+
 /// Different modes to use with aes block cipher encryption.
 /// ECB dosen't need additional parameters but it is considered unsecured.
 /// CBC requires initialization vector.
-#[derive(Clone)]
 pub enum Mode {
     Ecb,
     Cbc(Block),
 }
 
 /// Padding options to extend input to the block size.
-#[derive(Clone)]
 pub enum Padding {
     PKCS7,
 }
@@ -35,30 +38,45 @@ pub enum Padding {
 pub struct CipherError(String);
 
 pub struct Cipher<'a> {
-    encryptor: Encryptor<'a>,
-    decryptor: Decryptor<'a>,
+    operation: Operation,
+    encryptor: Option<Encryptor<'a>>,
+    decryptor: Option<Decryptor<'a>>,
 }
 
 impl<'a> Cipher<'a> {
-    pub fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError> {
-        let encryptor = Encryptor::init(key, mode.clone(), padding.clone())?;
-        let decryptor = Decryptor::init(key, mode, padding)?;
+    pub fn init(
+        operation: Operation,
+        key: &'a [u8],
+        mode: Mode,
+        padding: Padding,
+    ) -> Result<Self, CipherError> {
+        let (encryptor, decryptor) = match operation {
+            Operation::Encrypt => (Some(Encryptor::init(key, mode, padding)?), None),
+            Operation::Decrypt => (None, Some(Decryptor::init(key, mode, padding)?)),
+        };
         Ok(Self {
+            operation,
             encryptor,
             decryptor,
         })
     }
 
-    pub fn encryptor(&mut self) -> &mut Encryptor<'a> {
-        &mut self.encryptor
+    pub fn update(&mut self, data: &[u8]) -> Vec<u8> {
+        match self.operation {
+            Operation::Encrypt => self.encryptor.as_mut().unwrap().update(data),
+            Operation::Decrypt => self.decryptor.as_mut().unwrap().update(data),
+        }
     }
 
-    pub fn decryptor(&mut self) -> &mut Decryptor<'a> {
-        &mut self.decryptor
+    pub fn finalize(self) -> Result<Vec<u8>, CipherError> {
+        match self.operation {
+            Operation::Encrypt => self.encryptor.unwrap().finalize(),
+            Operation::Decrypt => self.decryptor.unwrap().finalize(),
+        }
     }
 }
 
-pub trait Operations<'a> {
+trait InitUpdateFinalize<'a> {
     fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError>
     where
         Self: Sized;
@@ -66,14 +84,14 @@ pub trait Operations<'a> {
     fn finalize(&mut self) -> Result<Vec<u8>, CipherError>;
 }
 
-pub struct Encryptor<'a> {
+struct Encryptor<'a> {
     key: &'a [u8],
     mode: Mode,
     padding: Padding,
     buffer: Vec<u8>,
 }
 
-impl<'a> Operations<'a> for Encryptor<'a> {
+impl<'a> InitUpdateFinalize<'a> for Encryptor<'a> {
     fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError> {
         if ![16, 24, 32].contains(&key.len()) {
             return Err(CipherError(format!(
@@ -151,14 +169,14 @@ impl<'a> Operations<'a> for Encryptor<'a> {
     }
 }
 
-pub struct Decryptor<'a> {
+struct Decryptor<'a> {
     key: &'a [u8],
     mode: Mode,
     padding: Padding,
     buffer: Vec<u8>,
 }
 
-impl<'a> Operations<'a> for Decryptor<'a> {
+impl<'a> InitUpdateFinalize<'a> for Decryptor<'a> {
     fn init(key: &'a [u8], mode: Mode, padding: Padding) -> Result<Self, CipherError> {
         if ![16, 24, 32].contains(&key.len()) {
             return Err(CipherError(format!(

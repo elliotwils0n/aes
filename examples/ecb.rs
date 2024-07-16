@@ -1,4 +1,4 @@
-use aes::Operations;
+use aes::{Cipher, Mode, Operation, Padding};
 
 fn main() {
     let key = "0123456789abcdef".as_bytes();
@@ -17,28 +17,32 @@ fn main() {
         "Eros in cursus turpis massa tincidunt dui.",
         "Aliquam purus sit amet luctus venenatis."];
 
-    let mut cipher = match aes::Cipher::init(key, aes::Mode::Ecb, aes::Padding::PKCS7) {
+    // Encrypt data
+    let mut cipher = match Cipher::init(Operation::Encrypt, key, Mode::Ecb, Padding::PKCS7) {
         Ok(c) => c,
         Err(err) => panic!("{:?}", err),
     };
 
-    // Encrypt data
     let mut ciphertext = Vec::<u8>::new();
     for p in plaintext {
-        let c = cipher.encryptor().update(p.as_bytes());
+        let c = cipher.update(p.as_bytes());
         ciphertext.extend(c);
     }
-    let c = match cipher.encryptor().finalize() {
+    let c = match cipher.finalize() {
         Ok(f) => f,
         Err(err) => panic!("{:?}", err),
     };
     ciphertext.extend(c);
 
     // Decrypt data
+    let mut cipher = match Cipher::init(Operation::Decrypt, key, Mode::Ecb, Padding::PKCS7) {
+        Ok(c) => c,
+        Err(err) => panic!("{:?}", err),
+    };
     let mut recovered = Vec::<u8>::with_capacity(ciphertext.len());
-    let c = cipher.decryptor().update(&ciphertext);
+    let c = cipher.update(&ciphertext);
     recovered.extend(c);
-    let c = match cipher.decryptor().finalize() {
+    let c = match cipher.finalize() {
         Ok(f) => f,
         Err(err) => panic!("{:?}", err),
     };
