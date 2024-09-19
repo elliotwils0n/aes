@@ -1,0 +1,19 @@
+[package]
+name = "aes"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.79.0"
+
+authors = ["elliotwils0n"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/elliotwils0n/aes"
+homepage = ""
+
+description = "Advanced Encryption Standard"
+categories = ["cryptography"]
+keywords = ["cryptography", "encryption", "security"]
+
+exclude = [".github", ".gitignore"]
+
+[dependencies]

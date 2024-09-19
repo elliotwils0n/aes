@@ -1,0 +1,147 @@
+name: CI
+
+permissions: {}
+
+on:
+  push:
+    branches: [master]
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: short
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Check if code compiles.
+  check:
+    name: cargo check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo check
+        run: cargo check --all-targets --all-features
+
+  # Check formatting.
+  fmt:
+    name: cargo fmt
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: cargo fmt
+        run: cargo fmt --all --check
+
+  # Check warnings.
+  clippy:
+    name: "cargo clippy (${{ matrix.toolchain }})"
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, beta]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install Rust ${{ matrix.toolchain }}"
+        #run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }} 
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+      - name: cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  # Check docs.
+  docs:
+    name: cargo doc
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      #- run: rustup update stable && rustup default stable
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo doc
+        run: cargo doc --no-deps --all-features
+
+  # Run tests against different systems.
+  test:
+    name: "cargo test (${{ matrix.toolchain }} on ${{ matrix.os }})"
+    needs: check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        toolchain: [stable, beta, nightly]
+        include:
+          - os: windows-latest
+            toolchain: stable
+          - os: macos-latest
+            toolchain: stable
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install Rust ${{ matrix.toolchain }}"
+        #run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: cargo test
+        run: cargo test --all-targets --all-features
+      - name: cargo test --doc
+        run: cargo test --doc
+
+  # Run tests againts minimal dependencies versions.
+  minimal:
+    name: cargo test (with -Zminimal-versions)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install stable
+        #run: rustup update stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly
+        #run: rustup update nightly
+        uses: dtolnay/rust-toolchain@nightly
+      - name: rustup default stable
+        run: rustup default stable
+      - name: cargo update -Zminimal-versions
+        run: cargo +nightly update -Zminimal-versions
+      - name: cargo test
+        run: cargo test --locked
+
+  # Run miri test
+  miri:
+    name: cargo miri test
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install stable
+        #run: rustup update stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly
+        #run: rustup update nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      #- name: Install miri
+      #  run: rustup +nightly component add miri
+      - name: rustup default stable
+        run: rustup default stable
+      - name: cargo miri test
+        run: cargo +nightly miri test
